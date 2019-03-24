@@ -1,5 +1,6 @@
 import argparse
 import time
+import re as regex
 from git import Repo
 
 def GetCommitYear(element):
@@ -30,16 +31,36 @@ def GetTopCommiters(repo, yearFrom="1969", yearTo="2020"):
 			element = next(allCommits)
 			setYear = GetCommitYear(element)
 			if (IsInYearInterval(yearFrom, yearTo, setYear)):
-				if element.committer.name in dictionary:
-					dictionary[element.committer.name] = dictionary[element.committer.name] + 1
+				if element.author.name in dictionary:
+					dictionary[element.author.name] = dictionary[element.author.name] + 1
 				else:
-					dictionary[element.committer.name] = 1
+					dictionary[element.author.name] = 1
 		except StopIteration:
 			break
 	for key, value in sorted(dictionary.items(), key=lambda kv: kv[1], reverse=True):
 		print (key, value)
 		count = count + 1
 		if count == 9:
+			break
+
+def GetNumberOfEdits(repo, add=True, searchString='List<'):
+	allCommits = repo.iter_commits()
+	total = 0
+	if(add):
+		searchRegex = r"\+.*" + regex.escape(searchString) + r".*\n"
+	else:
+		searchRegex = r"\-.*" + regex.escape(searchString) + r".*\n"
+	while True:
+		try:
+			element = next(allCommits)
+			setYear = GetCommitYear(element)
+			if(IsInYearInterval(args.yearFrom, args.yearTo, setYear)):
+				nextCommit = next(allCommits)
+				diff = repo.git.diff(element, nextCommit)
+				allLists = regex.findall(searchRegex, diff)
+				total = total + len(allLists)
+		except StopIteration:
+			print("Number of \'%s\' Edits: %d %s" % (searchString, total, "adds" if add else "removes"))
 			break
 
 def GetMostModifiedFiles(repo, yearFrom="1969", yearTo="2020", extension=".cs", max=5):
@@ -106,7 +127,9 @@ elif args.option == "8":
 	GetTopCommiters(repo, args.yearFrom, args.yearTo)
 
 #9. Quantas vezes List foi adicionado no código? 
-#elif args.option == 9
+elif args.option == "9":
+	GetNumberOfEdits(repo, True, args.searchString)
 
 #10. Quantas vezes Dictionary foi removido do código? 
-#elif args.option == 10
+elif args.option == "10":
+	GetNumberOfEdits(repo, False, args.searchString)
