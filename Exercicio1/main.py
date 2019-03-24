@@ -2,14 +2,19 @@ import argparse
 import time
 from git import Repo
 
+def GetCommitYear(element):
+	return time.strftime("%Y", time.gmtime(element.committed_date))
+
+def IsInYearInterval(yearFrom, yearTo, setYear):
+	return (yearFrom=="1969" and yearTo=="2020") or (setYear>=yearFrom and setYear<=yearTo)
+
 def GetTotalCommits(repo, yearFrom="1969", yearTo="2020", message=""):
 	allCommits = repo.iter_commits()
 	count = 0
 	while True:
 		try:
 			element = next(allCommits)
-			#date = time.asctime(time.gmtime(element.committed_date))
-			setYear = time.strftime("%Y", time.gmtime(element.committed_date))
+			setYear = GetCommitYear(element)
 			if(((yearFrom=="1969" and yearTo=="2020") or (setYear>=yearFrom and setYear<=yearTo)) and (message == "" or element.message.find(message)>=0)):
 				count = count + 1
 		except StopIteration:
@@ -23,8 +28,8 @@ def GetTopCommiters(repo, yearFrom="1969", yearTo="2020"):
 	while True:
 		try:
 			element = next(allCommits)
-			setYear = time.strftime("%Y", time.gmtime(element.committed_date))
-			if ((yearFrom=="1969" and yearTo=="2020") or (setYear>=yearFrom and setYear<=yearTo)):
+			setYear = GetCommitYear(element)
+			if (IsInYearInterval(yearFrom, yearTo, setYear)):
 				if element.committer.name in dictionary:
 					dictionary[element.committer.name] = dictionary[element.committer.name] + 1
 				else:
@@ -37,6 +42,29 @@ def GetTopCommiters(repo, yearFrom="1969", yearTo="2020"):
 		if count == 9:
 			break
 
+def GetMostModifiedFiles(repo, yearFrom="1969", yearTo="2020", extension=".cs", max=5):
+	allCommits = repo.iter_commits()
+	dictionary = {}
+	count = 0
+	while True:
+		try:
+			element = next(allCommits)
+			setYear = GetCommitYear(element)
+			if(IsInYearInterval(yearFrom, yearTo, setYear)):
+				for key in element.stats.files:
+					if key.endswith(extension): 
+						if key in dictionary:
+							dictionary[key] = dictionary[key] + 1
+						else:
+							dictionary[key] = 1
+		except StopIteration:
+			break
+	for key, value in sorted(dictionary.items(), key=lambda kv: kv[1], reverse=True):
+		print (key, value)
+		count = count + 1
+		if count == max:
+			break
+
 parser = argparse.ArgumentParser(description="Arguments Description")
 parser.add_argument('--repo', nargs='?', default='./lime-csharp', help='Repo to use')
 parser.add_argument('--option', nargs='?', default=1, help='Option selected from list')
@@ -44,7 +72,7 @@ parser.add_argument('--yearTo', nargs='?', default="2019", help='Year to check u
 parser.add_argument('--yearFrom', nargs='?', default="1969", help='Year to check from')
 parser.add_argument('--searchString', nargs='?', default=1, help='String to search for')
 parser.add_argument('--count', nargs='?', default=5, help='Positions returned')
-parser.add_argument('--fileType', nargs='?', default='cs', help='File extension to search for')
+parser.add_argument('--fileType', nargs='?', default='.cs', help='File extension to search for')
 
 args = parser.parse_args()
 repo = Repo(args.repo)
@@ -65,9 +93,8 @@ elif args.option == "3":
 #5. Quais os 5 arquivos <extensao> mais modificados desde 2018? 
 #6. Quais os 5 arquivos <extensao> mais modificados em 2017? 
 elif args.option == "4" or args.option == "5" or args.option == "6":
-	file = repo.commit('9bf513720b9f4019ef9fc4836bfab9608d817224').stats.files[0]
-	print(file)
-	#print(repo.commit('9bf513720b9f4019ef9fc4836bfab9608d817224').stats.files)
+	print ("This might take a while if the selected repository has a big number of commits")
+	GetMostModifiedFiles(repo, args.yearFrom, args.yearTo, args.fileType, args.count)
 
 #7. Quais os 3 desenvolvedores mais ativos? 
 # Obs: Serão printados por default os top10, pois o repositório de exemplo tem múltiplos committers que são o mesmo usuário
