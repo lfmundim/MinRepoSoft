@@ -50,3 +50,6 @@ elif args.option == "9":
 #10. Quantas vezes Dictionary foi removido do código? 
 elif args.option == "10":
 	gitPyService.GetNumberOfEdits(False, args.searchString)
+
+elif args.option == "11":
+	gitPyService.Test()

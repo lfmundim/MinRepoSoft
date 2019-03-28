@@ -1,3 +1,4 @@
+import io
 import time
 import re as regex
 from git import Repo
@@ -11,7 +12,11 @@ class GitPyService:
 			folder = path
 		else:	
 			folder = './' + url.split('/')[-1].split('.')[0]
-			Repo.clone_from(url, folder)
+			try:
+				Repo.clone_from(url, folder)
+			except:
+				print("")
+
 		return Repo(folder)
 
 	def GetCommitYear(self, element):
@@ -98,3 +103,12 @@ class GitPyService:
 			count = count + 1
 			if count == max:
 				break
+
+	def GetLinesByFile(self, commit):
+		files = commit.stats.files
+		for file in files:
+			targetfile = commit.tree / file
+
+			with io.BytesIO(targetfile.data_stream.read()) as f:
+				num_lines = sum(1 for line in f)
+				print("Count: ", num_lines)
