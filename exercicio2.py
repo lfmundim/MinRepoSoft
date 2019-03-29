@@ -1,7 +1,5 @@
 import argparse
-import time
-import re as regex
-from git import Repo
+import GitPyService as gps
 
 parser = argparse.ArgumentParser(description="Arguments Description")
 parser.add_argument('--repo', nargs='?', default='https://github.com/takenet/lime-csharp', help='Repo to use')
@@ -15,76 +13,21 @@ parser.add_argument('--fileType', nargs='?', default='.cs', help='File extension
 
 args = parser.parse_args()
 
-if args.folder != '':
-	folder = args.folder
-else:	
-	repoName = args.repo.split('/')[-1].split('.')[0]
-	folder = './'+repoName
-	Repo.clone_from(args.repo, folder)
-repo = Repo(folder)
+gitPyService = gps.GitPyService(args.folder, args.repo)
 
 if args.option == "1":
-    allCommits = repo.iter_commits()
-    element = next(allCommits)
-    print('Files on latest commit: ', len(element.stats.files))
-    print(element.stats.files)
-    while True:
-        try:
-            element = next(allCommits)
-        except StopIteration:
-            break
-    print('Files on first commit: ', len(element.stats.files))
-    print(element.stats.files)
+    gitPyService.GetCountFilesFirstAndLastCommits()
 
-if args.option == "2":
-    allCommits = repo.iter_commits()
-    element = next(allCommits)
-    count = 0
-    for file in element.stats.files:
-        if file.endswith(args.fileType):
-            count += 1
-    print('Number of files using extension ', args.fileType, 'on latest commit: ', count)
-    count = 0
-    while True:
-        try:
-            element = next(allCommits)
-        except StopIteration:
-            break
-    for file in element.stats.files:
-        if file.endswith(args.fileType):
-            count += 1
-    print('Number of files using extension ', args.fileType, 'on first commit: ', count)
+elif args.option == "2":
+    gitPyService.GetCountFilesFirstAndLastCommits(args.fileType)
 
-if args.option == "3":
-    allCommits = repo.iter_commits()
-    fileCountList = []
-    while True:
-        try:
-            element = next(allCommits)
-            fileCountList.append(len(element.stats.files))
-        except StopIteration:
-            break
-    print('Files per commit: ')
-    print(fileCountList)
+elif args.option == "3":
+    gitPyService.GetCountFilesByCommit()
 
+elif args.option == "4":
+    gitPyService.GetCountFilesByCommit(args.fileType)
 
-if args.option == "4":
-    allCommits = repo.iter_commits()
-    fileCountList = []
-    while True:
-        try:
-            element = next(allCommits)
-            fileCount = 0
-            for file in element.stats.files:
-                if file.endswith(args.fileType):
-                    fileCount += 1
-            fileCountList.append(fileCount)
-        except StopIteration:
-            break
-    print(args.fileType, 'Files per commit: ')
-    print(fileCountList)
-
-if args.option == "5":
-    allCommits = repo.iter_commits()
-    git = repo.git
-    git.checkout()
+# if args.option == "5":
+#     allCommits = repo.iter_commits()
+#     git = repo.git
+#     git.checkout()

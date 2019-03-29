@@ -104,6 +104,54 @@ class GitPyService:
 			if count == max:
 				break
 
+	def GetCountFilesFirstAndLastCommits(self, fileType=""):
+		allCommits = self.repo.iter_commits()
+		element = next(allCommits)
+		count = 0
+		for file in element.stats.files:
+			if fileType == "" or file.endswith(fileType):
+				count += 1
+		print('Number of files on latest commit: ', count)
+		while True:
+			try:
+				element = next(allCommits)
+			except StopIteration:
+				break
+		count = 0
+		for file in element.stats.files:
+			if fileType == "" or file.endswith(fileType):
+				count += 1
+		print('Number of files on first commit: ', count)
+
+	def GetCountFilesByCommit(self):
+		allCommits = self.repo.iter_commits()
+		fileCountList = []
+		while True:
+			try:
+				element = next(allCommits)
+				fileCountList.append(len(element.stats.files))
+			except StopIteration:
+				break
+		print('Files per commit: ')
+		print(fileCountList)
+
+	def GetCountFilesByCommit(self, fileType=""):
+		allCommits = self.repo.iter_commits()
+		fileCountList = []
+		while True:
+			try:
+				element = next(allCommits)
+				fileCount = 0
+				for file in element.stats.files:
+					if file.endswith(fileType):
+						fileCount += 1
+				fileCountList.append(fileCount)
+			except StopIteration:
+				break
+		print(fileType, 'Files per commit: ')
+		print(fileCountList)
+
+
 	def GetLinesByFile(self, commit):
 		files = commit.stats.files
 		for file in files:
