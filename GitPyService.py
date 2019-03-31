@@ -142,11 +142,77 @@ class GitPyService:
 		print(fileType, 'Files per commit: ')
 		print(fileCountList)
 
-	def GetLinesByFile(self, commit):
-		files = commit.stats.files
-		for file in files:
-			targetfile = commit.tree / file
+	def GetLinesByFile(self, fileType='.cs'):
+		allCommits = self.repo.iter_commits()
+		while True:
+			try:
+				commit = next(allCommits)
+				print('Commit ', commit)
+				files = commit.stats.files
+				for file in files:
+					if not file.endswith(fileType):
+						continue
+					try:
+						targetfile = commit.tree / file
+					# files not found
+					except KeyError:
+						continue
+					with io.BytesIO(targetfile.data_stream.read()) as f:
+						num_lines = sum(1 for line in f)
+						print('\t',file, "Line Count: ", num_lines)
+			except StopIteration:
+				break
 
-			with io.BytesIO(targetfile.data_stream.read()) as f:
-				num_lines = sum(1 for line in f)
-				print("Count: ", num_lines)
+	def GetCountFilesByYear(self, fileType="All"):
+		allCommits = self.repo.iter_commits()
+		latestCommit = next(allCommits)
+		dictionary = {}
+		lastYear = self.GetCommitYear(latestCommit)
+		allCommits = self.repo.iter_commits()
+		while True:
+			try:
+				element = next(allCommits)
+				year = self.GetCommitYear(element)
+				if lastYear != year:
+					print(lastYear, ':', len(dictionary))
+					lastYear = year
+					dictionary = {}
+				for file in element.stats.files:
+					if fileType != "All":
+						if file not in dictionary and file.endswith(fileType):
+							dictionary[file] = 1
+						elif file in dictionary and file.endswith(fileType):
+							dictionary[file] = dictionary[file] + 1	
+					else:
+						if file not in dictionary:
+							dictionary[file] = 1
+						else:
+							dictionary[file] = dictionary[file] + 1
+			except StopIteration:
+				break
+
+	def GetFilesByYear(self, fileType):
+		allCommits = self.repo.iter_commits()
+		dictionary = {}
+		while True:
+			try:
+				element = next(allCommits)
+				year = self.GetCommitYear(element)
+				for file in element.stats.files:
+					if not file.endswith(fileType):
+						continue
+					try:
+						targetfile = element.tree / file
+					# files not found
+					except KeyError:
+						continue
+					with io.BytesIO(targetfile.data_stream.read()) as f:
+						num_lines = sum(1 for line in f)
+					if year not in dictionary and file.endswith(fileType):
+							dictionary[year] = num_lines
+					elif year in dictionary and file.endswith(fileType):
+						dictionary[year] = dictionary[year] + num_lines
+			except StopIteration:
+				break
+		print (dictionary)
+
