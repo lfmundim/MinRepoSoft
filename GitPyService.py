@@ -60,7 +60,7 @@ class GitPyService:
 			if count == max:
 				break
 
-	def GetNumberOfEdits(self, add=True, searchString='List<'):
+	def GetNumberOfEdits(self, add=True, searchString='List<', yearFrom='1969', yearTo='2020'):
 		allCommits = self.repo.iter_commits()
 		total = 0
 		if(add):
@@ -71,9 +71,9 @@ class GitPyService:
 			try:
 				element = next(allCommits)
 				setYear = self.GetCommitYear(element)
-				if(self.IsInYearInterval(args.yearFrom, args.yearTo, setYear)):
+				if(self.IsInYearInterval(yearFrom, yearTo, setYear)):
 					nextCommit = next(allCommits)
-					diff = repo.git.diff(element, nextCommit)
+					diff = self.repo.git.diff(element, nextCommit)
 					allLists = regex.findall(searchRegex, diff)
 					total = total + len(allLists)
 			except StopIteration:
@@ -123,40 +123,96 @@ class GitPyService:
 				count += 1
 		print('Number of files on first commit: ', count)
 
-	def GetCountFilesByCommit(self):
+	def GetCountFilesByCommit(self, fileType="All"):
 		allCommits = self.repo.iter_commits()
 		fileCountList = []
 		while True:
 			try:
 				element = next(allCommits)
-				fileCountList.append(len(element.stats.files))
-			except StopIteration:
-				break
-		print('Files per commit: ')
-		print(fileCountList)
-
-	def GetCountFilesByCommit(self, fileType=""):
-		allCommits = self.repo.iter_commits()
-		fileCountList = []
-		while True:
-			try:
-				element = next(allCommits)
-				fileCount = 0
-				for file in element.stats.files:
-					if file.endswith(fileType):
-						fileCount += 1
-				fileCountList.append(fileCount)
+				if fileType=="All":
+					fileCountList.append(len(element.stats.files))
+				else:
+					fileCount = 0
+					for file in element.stats.files:
+						if file.endswith(fileType):
+							fileCount += 1
+					fileCountList.append(fileCount)
 			except StopIteration:
 				break
 		print(fileType, 'Files per commit: ')
 		print(fileCountList)
 
+	def GetLinesByFile(self, fileType='.cs'):
+		allCommits = self.repo.iter_commits()
+		while True:
+			try:
+				commit = next(allCommits)
+				print('Commit ', commit)
+				files = commit.stats.files
+				for file in files:
+					if not file.endswith(fileType):
+						continue
+					try:
+						targetfile = commit.tree / file
+					# files not found
+					except KeyError:
+						continue
+					with io.BytesIO(targetfile.data_stream.read()) as f:
+						num_lines = sum(1 for line in f)
+						print('\t',file, "Line Count: ", num_lines)
+			except StopIteration:
+				break
 
-	def GetLinesByFile(self, commit):
-		files = commit.stats.files
-		for file in files:
-			targetfile = commit.tree / file
+	def GetCountFilesByYear(self, fileType="All"):
+		allCommits = self.repo.iter_commits()
+		latestCommit = next(allCommits)
+		dictionary = {}
+		lastYear = self.GetCommitYear(latestCommit)
+		allCommits = self.repo.iter_commits()
+		while True:
+			try:
+				element = next(allCommits)
+				year = self.GetCommitYear(element)
+				if lastYear != year:
+					print(lastYear, ':', len(dictionary))
+					lastYear = year
+					dictionary = {}
+				for file in element.stats.files:
+					if fileType != "All":
+						if file not in dictionary and file.endswith(fileType):
+							dictionary[file] = 1
+						elif file in dictionary and file.endswith(fileType):
+							dictionary[file] = dictionary[file] + 1	
+					else:
+						if file not in dictionary:
+							dictionary[file] = 1
+						else:
+							dictionary[file] = dictionary[file] + 1
+			except StopIteration:
+				break
 
-			with io.BytesIO(targetfile.data_stream.read()) as f:
-				num_lines = sum(1 for line in f)
-				print("Count: ", num_lines)
+	def GetFilesByYear(self, fileType):
+		allCommits = self.repo.iter_commits()
+		dictionary = {}
+		while True:
+			try:
+				element = next(allCommits)
+				year = self.GetCommitYear(element)
+				for file in element.stats.files:
+					if not file.endswith(fileType):
+						continue
+					try:
+						targetfile = element.tree / file
+					# files not found
+					except KeyError:
+						continue
+					with io.BytesIO(targetfile.data_stream.read()) as f:
+						num_lines = sum(1 for line in f)
+					if year not in dictionary and file.endswith(fileType):
+							dictionary[year] = num_lines
+					elif year in dictionary and file.endswith(fileType):
+						dictionary[year] = dictionary[year] + num_lines
+			except StopIteration:
+				break
+		print (dictionary)
+
