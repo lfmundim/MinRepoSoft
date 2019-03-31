@@ -25,7 +25,7 @@ elif args.option == "3":
     gitPyService.GetCountFilesByCommit()
 
 elif args.option == "4":
-    gitPyService.GetCountFilesByCommit(args.fileType)
+    gitPyService.GetCountFilesByCommit(fileType=args.fileType)
 
 # if args.option == "5":
 #     allCommits = repo.iter_commits()

@@ -60,7 +60,7 @@ class GitPyService:
 			if count == max:
 				break
 
-	def GetNumberOfEdits(self, add=True, searchString='List<'):
+	def GetNumberOfEdits(self, add=True, searchString='List<', yearFrom='1969', yearTo='2020'):
 		allCommits = self.repo.iter_commits()
 		total = 0
 		if(add):
@@ -71,9 +71,9 @@ class GitPyService:
 			try:
 				element = next(allCommits)
 				setYear = self.GetCommitYear(element)
-				if(self.IsInYearInterval(args.yearFrom, args.yearTo, setYear)):
+				if(self.IsInYearInterval(yearFrom, yearTo, setYear)):
 					nextCommit = next(allCommits)
-					diff = repo.git.diff(element, nextCommit)
+					diff = self.repo.git.diff(element, nextCommit)
 					allLists = regex.findall(searchRegex, diff)
 					total = total + len(allLists)
 			except StopIteration:
@@ -123,34 +123,24 @@ class GitPyService:
 				count += 1
 		print('Number of files on first commit: ', count)
 
-	def GetCountFilesByCommit(self):
+	def GetCountFilesByCommit(self, fileType="All"):
 		allCommits = self.repo.iter_commits()
 		fileCountList = []
 		while True:
 			try:
 				element = next(allCommits)
-				fileCountList.append(len(element.stats.files))
-			except StopIteration:
-				break
-		print('Files per commit: ')
-		print(fileCountList)
-
-	def GetCountFilesByCommit(self, fileType=""):
-		allCommits = self.repo.iter_commits()
-		fileCountList = []
-		while True:
-			try:
-				element = next(allCommits)
-				fileCount = 0
-				for file in element.stats.files:
-					if file.endswith(fileType):
-						fileCount += 1
-				fileCountList.append(fileCount)
+				if fileType=="All":
+					fileCountList.append(len(element.stats.files))
+				else:
+					fileCount = 0
+					for file in element.stats.files:
+						if file.endswith(fileType):
+							fileCount += 1
+					fileCountList.append(fileCount)
 			except StopIteration:
 				break
 		print(fileType, 'Files per commit: ')
 		print(fileCountList)
-
 
 	def GetLinesByFile(self, commit):
 		files = commit.stats.files
