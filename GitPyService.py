@@ -32,7 +32,8 @@ class GitPyService:
 			try:
 				element = next(allCommits)
 				setYear = self.GetCommitYear(element)
-				if(((yearFrom=="1969" and yearTo=="2020") or (setYear>=yearFrom and setYear<=yearTo)) and (message == "" or element.message.find(message)>=0)):
+				if(((yearFrom=="1969" and yearTo=="2020") or (setYear>=yearFrom and setYear<=yearTo)) 
+					 and (message == "" or element.message.find(message)>=0)):
 					count = count + 1
 			except StopIteration:
 				break
