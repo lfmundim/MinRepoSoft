@@ -5,6 +5,7 @@ class ComplexCalc:
 		totalIndent = 0
 		maxIndent = 0
 		lineCount = 0
+		
 		with open(file, 'rU') as f:
 			for line in f:
 				lineCount += 1
@@ -26,7 +27,7 @@ class ComplexCalc:
 					totalIndent += int(currentIndent / 4)
 					if(int(currentIndent / 4) > maxIndent):
 						maxIndent = int(currentIndent / 4)
-		return totalIndent, maxIndent, lineCount;
+		return totalIndent, maxIndent, lineCount
 
 	def GetCTAByIndent(self, file):
 		complexStats = self.GetComplexStatsByIndent(file)
