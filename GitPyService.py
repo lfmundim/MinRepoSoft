@@ -2,6 +2,8 @@ import io
 import time
 import re as regex
 from git import Repo
+import os
+import ComplexCalc as cc
 
 class GitPyService:
 	def __init__(self, path, url):
@@ -217,3 +219,20 @@ class GitPyService:
 				break
 		print (dictionary)
 
+	def GetCommitComplexityMetrics(self, commit, folderPath, fileType='.cs'):
+		self.repo.git.checkout(commit)
+		craDic = {}
+		ctaDic = {}
+		mcaDic = {}
+		complexCalc = cc.ComplexCalc()
+
+		for root, directory, files in os.walk(folderPath):
+			for file in files:
+				if(file.endswith(fileType)):
+					fullPath = os.path.join(root, file)
+					craDic[fullPath] = complexCalc.GetCRAByIndent(fullPath)
+					ctaDic[fullPath] = complexCalc.GetCTAByIndent(fullPath)
+					mcaDic[fullPath] = complexCalc.GetMCAByIndent(fullPath)
+		print('Highest CRA:\n', sorted(craDic.items(), reverse=True)[0], '\n')
+		print('Highest CTA:\n', sorted(ctaDic.items(), reverse=True)[0], '\n')
+		print('Highest MCA:\n', sorted(mcaDic.items(), reverse=True)[0], '\n')

@@ -51,4 +51,7 @@ class ComplexCalc:
 				if(file.endswith(fileExtension)):
 					actualCraSum += self.GetCRAByIndent(os.path.join(root, file))
 					filesCount += 1
-		return actualCraSum/filesCount
+		if filesCount > 0:
+			return actualCraSum/filesCount
+		else:
+			return 0
