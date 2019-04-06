@@ -107,13 +107,18 @@ class GitPyService:
 			if count == max:
 				break
 
-	def GetCountFilesFirstAndLastCommits(self, fileType=""):
+	def GetCountFilesFirstAndLastCommits(self, folderPath, fileType=""):
+		self.repo.git.checkout('master')
 		allCommits = self.repo.iter_commits()
 		element = next(allCommits)
 		count = 0
-		for file in element.stats.files:
-			if fileType == "" or file.endswith(fileType):
-				count += 1
+		self.repo.git.checkout(element)
+		for root, directory, files in os.walk(folderPath):
+			for file in files:
+				if(fileType != "" and file.endswith(fileType)):
+					count += 1
+				elif(fileType==""):
+					count += 1
 		print('Number of files on latest commit: ', count)
 		while True:
 			try:
@@ -121,80 +126,91 @@ class GitPyService:
 			except StopIteration:
 				break
 		count = 0
-		for file in element.stats.files:
-			if fileType == "" or file.endswith(fileType):
-				count += 1
+		self.repo.git.checkout(element)
+		for root, directory, files in os.walk(folderPath):
+			for file in files:
+				if(fileType != "" and file.endswith(fileType)):
+					count += 1
+				elif(fileType==""):
+					count += 1
 		print('Number of files on first commit: ', count)
 
-	def GetCountFilesByCommit(self, fileType="All"):
+	def GetCountFilesByCommit(self, folderPath, fileType="All"):
+		self.repo.git.checkout('master')
 		allCommits = self.repo.iter_commits()
 		fileCountList = []
 		while True:
 			try:
 				element = next(allCommits)
-				if fileType=="All":
-					fileCountList.append(len(element.stats.files))
-				else:
-					fileCount = 0
-					for file in element.stats.files:
-						if file.endswith(fileType):
-							fileCount += 1
-					fileCountList.append(fileCount)
+				self.repo.git.checkout(element)
+				fileCount = 0
+				for root, directory, files in os.walk(folderPath):
+					for file in files:
+						if fileType != "All" and file.endswith(fileType):
+							fileCount +=1
+						elif fileType == "All":
+							fileCount +=1
+				fileCountList.append(fileCount)
 			except StopIteration:
 				break
 		print(fileType, 'Files per commit: ')
 		print(fileCountList)
 
-	def GetLinesByFile(self, fileType='.cs'):
+	def GetLinesByFile(self, folderPath, fileType='.cs'):
+		self.repo.git.checkout('master')
 		allCommits = self.repo.iter_commits()
+		fullList = []
 		while True:
 			try:
 				commit = next(allCommits)
-				print('Commit ', commit)
-				files = commit.stats.files
-				for file in files:
-					if not file.endswith(fileType):
-						continue
-					try:
-						targetfile = commit.tree / file
-					# files not found
-					except KeyError:
-						continue
-					with io.BytesIO(targetfile.data_stream.read()) as f:
-						num_lines = sum(1 for line in f)
-						print('\t',file, "Line Count: ", num_lines)
+				commitLines = {}
+				self.repo.git.checkout(commit)
+				for root, directory, files in os.walk(folderPath):
+					for file in files:
+						if not file.endswith(fileType):
+							continue
+						fullPath = os.path.join(root, file)
+						with open(fullPath, 'rU') as f:
+							num_lines = sum(1 for line in f)
+							commitLines[fullPath] = num_lines
+				fullList.append(commitLines)
 			except StopIteration:
 				break
+		print(fullList)
 
-	def GetCountFilesByYear(self, fileType="All"):
+	def GetCountFilesByYear(self, folderPath, fileType="All"):
+		self.repo.git.checkout('master')
 		allCommits = self.repo.iter_commits()
 		latestCommit = next(allCommits)
 		dictionary = {}
 		lastYear = self.GetCommitYear(latestCommit)
 		allCommits = self.repo.iter_commits()
+		yearMax = 0
 		while True:
 			try:
 				element = next(allCommits)
+				self.repo.git.checkout(element)
+				fileCount = 0
 				year = self.GetCommitYear(element)
 				if lastYear != year:
-					print(lastYear, ':', len(dictionary))
+					dictionary[lastYear] = yearMax
+					yearMax = 0
 					lastYear = year
-					dictionary = {}
-				for file in element.stats.files:
-					if fileType != "All":
-						if file not in dictionary and file.endswith(fileType):
-							dictionary[file] = 1
-						elif file in dictionary and file.endswith(fileType):
-							dictionary[file] = dictionary[file] + 1	
-					else:
-						if file not in dictionary:
-							dictionary[file] = 1
+				for root, directory, files in os.walk(folderPath):
+					for file in files:
+						if fileType != "All":
+							if file.endswith(fileType):
+								fileCount += 1
 						else:
-							dictionary[file] = dictionary[file] + 1
+							fileCount += 1
+				if yearMax < fileCount:
+					yearMax = fileCount
 			except StopIteration:
+				dictionary[lastYear] = yearMax
 				break
+		print (dictionary)
 
-	def GetFilesByYear(self, fileType):
+	def GetFilesByYear(self, folderPath, fileType):
 		allCommits = self.repo.iter_commits()
 		dictionary = {}
 		while True:
