@@ -239,6 +239,7 @@ class GitPyService:
 		print (dictionary)
 
 	def GetAllFilesByYear(self, folderPath, fileType):
+		self.repo.git.checkout('master')
 		allCommits = self.repo.iter_commits()
 		dictionary = {}
 		while True:
@@ -249,12 +250,8 @@ class GitPyService:
 				for root, directory, files in os.walk(folderPath):
 					for file in files:
 						if(file.endswith(fileType)):
-							try:
-								targetfile = element.tree / (os.path.join(root, file)).replace(self.path, '')
-							# files not found
-							except KeyError:
-								continue
-							with io.BytesIO(targetfile.data_stream.read()) as f:
+							fullPath = os.path.join(root, file)
+							with open(fullPath, 'rU') as f:
 								num_lines = sum(1 for line in f)
 							if year not in dictionary and file.endswith(fileType):
 									dictionary[year] = num_lines
