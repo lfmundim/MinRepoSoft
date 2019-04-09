@@ -7,12 +7,14 @@ import ComplexCalc as cc
 
 class GitPyService:
 	def __init__(self, path, url):
+		self.path = path
+		self.url = url
 		self.repo = self.InitializeRepo(path, url)
 
 	def InitializeRepo(self, path, url):
 		if path != '':
 			folder = path
-		else:	
+		else:
 			folder = './' + url.split('/')[-1].split('.')[0]
 			try:
 				Repo.clone_from(url, folder)
@@ -34,7 +36,7 @@ class GitPyService:
 			try:
 				element = next(allCommits)
 				setYear = self.GetCommitYear(element)
-				if(((yearFrom=="1969" and yearTo=="2020") or (setYear>=yearFrom and setYear<=yearTo)) 
+				if(((yearFrom=="1969" and yearTo=="2020") or (setYear>=yearFrom and setYear<=yearTo))
 					 and (message == "" or element.message.find(message)>=0)):
 					count = count + 1
 			except StopIteration:
@@ -93,7 +95,7 @@ class GitPyService:
 				setYear = self.GetCommitYear(element)
 				if(self.IsInYearInterval(yearFrom, yearTo, setYear)):
 					for key in element.stats.files:
-						if key.endswith(extension): 
+						if key.endswith(extension):
 							if key in dictionary:
 								dictionary[key] = dictionary[key] + 1
 							else:
@@ -210,12 +212,13 @@ class GitPyService:
 				break
 		print (dictionary)
 
-	def GetFilesByYear(self, folderPath, fileType):
+	def GetCommitedFilesByYear(self, folderPath, fileType):
 		allCommits = self.repo.iter_commits()
 		dictionary = {}
 		while True:
 			try:
 				element = next(allCommits)
+				self.repo.git.checkout(element)
 				year = self.GetCommitYear(element)
 				for file in element.stats.files:
 					if not file.endswith(fileType):
@@ -235,7 +238,33 @@ class GitPyService:
 				break
 		print (dictionary)
 
-	def GetCommitComplexityMetrics(self, commit, folderPath, fileType='.cs'):
+	def GetAllFilesByYear(self, folderPath, fileType):
+		allCommits = self.repo.iter_commits()
+		dictionary = {}
+		while True:
+			try:
+				element = next(allCommits)
+				self.repo.git.checkout(element)
+				year = self.GetCommitYear(element)
+				for root, directory, files in os.walk(folderPath):
+					for file in files:
+						if(file.endswith(fileType)):
+							try:
+								targetfile = element.tree / (os.path.join(root, file)).replace(self.path, '')
+							# files not found
+							except KeyError:
+								continue
+							with io.BytesIO(targetfile.data_stream.read()) as f:
+								num_lines = sum(1 for line in f)
+							if year not in dictionary and file.endswith(fileType):
+									dictionary[year] = num_lines
+							elif year in dictionary and file.endswith(fileType):
+								dictionary[year] = dictionary[year] + num_lines
+			except StopIteration:
+				break
+		print (dictionary)
+
+	def GetCommitedComplexityMetrics(self, commit, folderPath, fileType='.cs'):
 		self.repo.git.checkout(commit)
 		craDic = {}
 		ctaDic = {}

@@ -45,4 +45,7 @@ elif args.option == "7":
 
 # numero de linhas de codigo da extensao por ano
 elif args.option == "8":
-    gitPyService.GetFilesByYear(folderPath=args.folder, fileType=args.fileType)
+    gitPyService.GetCommitedFilesByYear(folderPath=args.folder, fileType=args.fileType)
+
+elif args.option == "9":
+    gitPyService.GetAllFilesByYear(folderPath=args.folder, fileType=args.fileType)
