@@ -1,5 +1,6 @@
 import argparse
 import GraphLib as gl
+from git import Repo
 
 parser = argparse.ArgumentParser(description="Arguments Description")
 parser.add_argument('--repo', nargs='?', default='https://github.com/takenet/lime-csharp', help='Repo to use')
@@ -15,6 +16,27 @@ args = parser.parse_args()
 
 graphLib = gl.GraphLib()
 
-# complexidade por indent dos arquivos do ultimo commit
-if args.option == "1":
-    graphLib.testFunc()
+repo = Repo(args.folder)
+repo.git.checkout('master')
+commits = repo.iter_commits()
+
+while True:
+    try:
+        commit = next(commits)
+        commitFiles = commit.stats.files
+        for file in commitFiles:
+            if not file.endswith(args.fileType):
+                continue
+            for otherFile in commitFiles:
+                if not otherFile.endswith(args.fileType):
+                    continue
+                graphLib.addEdge(file, otherFile)
+    except StopIteration:
+        break
+
+print('Files most modified together:')
+print(graphLib.getHeaviestEdge())
+print('Most relationships by file:')
+print(graphLib.getMostRelatedNode())
+print('Most important file:')
+print(graphLib.GetMostImportantFile())
