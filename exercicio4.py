@@ -28,6 +28,8 @@ while True:
             if not file.endswith(args.fileType):
                 continue
             for otherFile in commitFiles:
+                if file == otherFile:
+                    continue
                 if not otherFile.endswith(args.fileType):
                     continue
                 graphLib.addEdge(file, otherFile)

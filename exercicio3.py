@@ -41,7 +41,7 @@ if args.option == "1":
     repo.git.checkout('master')
     commits = repo.iter_commits()
     commit = next(commits)
-    gitPyService.GetCommitComplexityMetrics(commit, args.folder, args.fileType)
+    gitPyService.GetCommitedComplexityMetrics(commit, args.folder, args.fileType)
 
 # complexidade por indent dos arquivos 1 ano atrás
 elif args.option == "2":
@@ -51,7 +51,7 @@ elif args.option == "2":
     yearAgo = (dt.now() - delta(years=1)).strftime('%Y-%m')
     commit = GetYearAgoCommit(commits)
     print('At time of commit', commit, '(', GetCommitDateTime(commit) ,')')
-    gitPyService.GetCommitComplexityMetrics(commit, args.folder, args.fileType)
+    gitPyService.GetCommitedComplexityMetrics(commit, args.folder, args.fileType)
 
 # compleixdade do projeto no ultimo commit
 elif args.option == "3":
